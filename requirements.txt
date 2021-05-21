@@ -1,0 +1,4 @@
+-i https://pypi.tuna.tsinghua.edu.cn/simple/
+requests==2.25.0
+urllib3==1.26.4
+gevent==21.1.2
