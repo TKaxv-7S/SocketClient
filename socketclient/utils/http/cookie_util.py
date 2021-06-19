@@ -33,7 +33,7 @@ def get_cookies_str(cookie):
         elif isinstance(cookie, dict):
             return cookies.cookiejar_from_dict(cookie).__str__()
         elif isinstance(cookie, str):
-            return cookies
+            return cookie
         else:
             logger.warning('cookie类型不匹配，使用空值')
             return ''
