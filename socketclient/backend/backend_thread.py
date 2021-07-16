@@ -10,7 +10,8 @@ try:
 except ImportError:  # py3
     import queue
 
+sleep = time.sleep
 Select = select.select
 Socket = socket.socket
-sleep = time.sleep
 Semaphore = threading.BoundedSemaphore
+Event = threading.Event

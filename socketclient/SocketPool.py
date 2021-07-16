@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -
-import queue
 import time
 
 from socketclient.Connector import Connector
@@ -18,15 +17,16 @@ class SocketPool(object):
         self.active_count = active_count
         self.max_count = max_count
         self.backend_mod = backend_mod
+        self.import_queue = getattr(backend_mod, 'queue')
 
-        self.pool = getattr(backend_mod, 'queue').Queue(max_count)
+        self.pool = self.import_queue.Queue(max_count)
 
         for i in range(active_count):
             try:
                 new_connect = conn_factory(host, port, backend_mod, True)
                 if new_connect.is_connected():
                     self.pool.put_nowait(new_connect)
-            except queue.Full:
+            except self.import_queue.Full:
                 logger.error("队列已满")
                 break
             except Exception as e:
@@ -37,7 +37,7 @@ class SocketPool(object):
                 try:
                     new_connect = conn_factory(host, port, backend_mod)
                     self.pool.put_nowait(new_connect)
-                except queue.Full:
+                except self.import_queue.Full:
                     logger.error("队列已满")
                     break
                 except Exception as e:
@@ -85,9 +85,9 @@ class SocketPool(object):
                         conn.connect()
                         active_count += 1
                     self.pool.put_nowait(conn)
-            except queue.Empty:
+            except self.import_queue.Empty:
                 break
-            except queue.Full:
+            except self.import_queue.Full:
                 break
             except Exception as e:
                 logger.error("异常信息：%s", e)
@@ -100,7 +100,7 @@ class SocketPool(object):
                 try:
                     new_connect = self.conn_factory(self.host, self.port, self.backend_mod)
                     self.pool.put_nowait(new_connect)
-                except queue.Full:
+                except self.import_queue.Full:
                     break
                 except Exception as e:
                     logger.error('新建连接异常，host：%s，port：%s，异常：%s', self.host, self.port, e)
@@ -113,7 +113,7 @@ class SocketPool(object):
                     try:
                         new_connect = self.conn_factory(self.host, self.port, self.backend_mod, True)
                         self.pool.put_nowait(new_connect)
-                    except queue.Full:
+                    except self.import_queue.Full:
                         break
                     except Exception as e:
                         logger.error('新建连接异常，host：%s，port：%s，异常：%s', self.host, self.port, e)
@@ -121,13 +121,13 @@ class SocketPool(object):
                     try:
                         new_connect = self.conn_factory(self.host, self.port, self.backend_mod)
                         self.pool.put_nowait(new_connect)
-                    except queue.Full:
+                    except self.import_queue.Full:
                         break
                     except Exception as e:
                         logger.error('新建连接异常，host：%s，port：%s，异常：%s', self.host, self.port, e)
-            else:
+            # else:
                 # 不应该会出现，否则打印错误日志
-                logger.error("队列中没有足够空间创建活动连接")
+                # logger.error("队列中没有足够空间创建活动连接")
 
     @property
     def size(self):
@@ -138,7 +138,7 @@ class SocketPool(object):
             while True:
                 try:
                     self.pool.get_nowait().invalidate()
-                except queue.Empty:
+                except self.import_queue.Empty:
                     break
                 except Exception as e:
                     logger.error("异常信息：%s", e)
@@ -154,7 +154,7 @@ class SocketPool(object):
                     try:
                         self.pool.put_nowait(conn)
                         return True
-                    except queue.Full:
+                    except self.import_queue.Full:
                         conn.invalidate()
                         return False
             else:
@@ -174,19 +174,23 @@ class SocketPool(object):
                         size -= 1
                         if size <= 0:
                             break
-                except queue.Empty:
+                except self.import_queue.Empty:
                     return None
                 except Exception as e:
                     logger.error("异常信息：%s", e)
+                    size -= 1
+                    if size <= 0:
+                        break
         try:
             new_item = self.conn_factory(host, port, self.backend_mod)
+            new_item.connect()
+            return new_item
         except Exception as e:
             logger.error("创建连接异常：%s", e)
-        else:
-            # we should be connected now
-            new_item.connect()
-            with self.sem:
-                return new_item
+            return None
+        # else:
+        #     # we should be connected now
+        #     with self.sem:
 
     def connect_all(self):
         size = self.pool.qsize()
@@ -202,9 +206,9 @@ class SocketPool(object):
                         conn.invalidate()
                     if size <= 0:
                         break
-                except queue.Full:
+                except self.import_queue.Full:
                     break
-                except queue.Empty:
+                except self.import_queue.Empty:
                     break
                 except Exception as e:
                     logger.error("异常信息：%s", e)
@@ -213,7 +217,7 @@ class SocketPool(object):
             try:
                 new_connect = self.conn_factory(self.host, self.port, self.backend_mod, True)
                 self.pool.put_nowait(new_connect)
-            except queue.Full:
+            except self.import_queue.Full:
                 if new_connect:
                     new_connect.invalidate()
                 break

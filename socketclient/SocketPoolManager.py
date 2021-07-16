@@ -67,27 +67,23 @@ class SocketPoolManager(object):
     def get_pool(self, host=None, port=80, full_init=True):
         pool = self.pools.get((host, port))
         if not pool:
-            if full_init is True:
-                pool = self.init_pool(host, port)
-            else:
-                with self.sem:
-                    if self.pools.__len__() < self.max_pool:
-                        pool = self.init_pool(host, port)
+            pool = self.init_pool(host, port, full_init=full_init)
         return pool
 
-    def init_pool(self, host=None, port=80, active_count=3, max_count=10):
+    def init_pool(self, host=None, port=80, active_count=3, max_count=10, full_init=False):
         with self.sem:
+            if full_init is False and self.max_pool <= self.pools.__len__():
+                return None
             pool = SocketPool(self.conn_factory, self.backend_mod, host, port, active_count, max_count)
             self.pools[(host, port)] = pool
-        return pool
+            return pool
 
     def verify_pools(self):
         for key in self.pools.keys():
             pool = self.pools.get(key)
             if pool:
-                with self.sem:
-                    if pool.size > 0:
-                        pool.verify_all()
+                if pool.size > 0:
+                    pool.verify_all()
 
     def put_connect(self, conn: Connector):
         pool = self.get_pool(conn.host, conn.port, False)

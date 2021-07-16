@@ -129,8 +129,9 @@ def send_http_request(sc: SocketClient, url, method='GET', params=None, data=Non
     host, port, byte_msg = mark_http_req_byte(url, method, params, data, headers, cookies, True)
     with sc.get_connect(host, port) as conn:
         # 发送报文
+        # logger.info('发送')
         conn.send(byte_msg)
-        # logger.debug('已发送')
+        # logger.info('已发送')
         # print(byte_msg)
         # 读取报文
         if res_func:

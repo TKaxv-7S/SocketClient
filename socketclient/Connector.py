@@ -96,7 +96,7 @@ class TcpConnector(Connector):
         self._connected = True
         self._connect_time = time.time()
 
-    def is_valid(self, verify_time=time.time()):
+    def is_valid(self, verify_time=None):
         if self.is_connected():
             return self.is_connecting()
             # 执行自定义保活，不启用

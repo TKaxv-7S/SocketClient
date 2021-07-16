@@ -4,6 +4,7 @@ import gevent
 from gevent import select
 from gevent import socket
 from gevent import queue
+from gevent import event
 
 try:
     from gevent import lock
@@ -13,6 +14,7 @@ except ImportError:
 
 
 sleep = gevent.sleep
-Semaphore = lock.BoundedSemaphore
 Socket = socket.socket
 Select = select.select
+Semaphore = lock.BoundedSemaphore
+Event = event.Event
