@@ -142,7 +142,7 @@ class SocketPool(object):
                     break
                 except Exception as e:
                     logger.error("异常信息：%s", e)
-        logger.info("主机[%s]端口[%s]所有连接释放完成", self.host, self.port)
+        logger.info("与主机[%s]端口[%s]连接已释放", self.host, self.port)
 
     def put_connect(self, conn: Connector):
         if conn.host != self.host or conn.port != self.port:

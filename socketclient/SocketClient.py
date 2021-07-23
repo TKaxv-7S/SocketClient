@@ -41,8 +41,10 @@ class SocketClient(object):
         try:
             yield conn
         except Exception as e:
-            conn.handle_exception(e)
-        finally:
+            logger.error('连接异常：%s', e)
+            if conn:
+                conn.invalidate()
+        else:
             self.pool_manager.put_connect(conn)
 
     # 连接单个，或者所有
