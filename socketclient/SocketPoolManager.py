@@ -74,8 +74,13 @@ class SocketPoolManager(object):
         with self.sem:
             if full_init is False and self.max_pool <= self.pools.__len__():
                 return None
-            pool = SocketPool(self.conn_factory, self.backend_mod, host, port, active_count, max_count)
-            self.pools[(host, port)] = pool
+            pool = self.pools.get((host, port))
+            if not pool:
+                pool = SocketPool(self.conn_factory, self.backend_mod, host, port, active_count, max_count)
+                self.pools[(host, port)] = pool
+            else:
+                pool.active_count = active_count
+                pool.max_count = max_count
             return pool
 
     def verify_pools(self):
